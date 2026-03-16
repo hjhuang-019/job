@@ -1,0 +1,25 @@
+#!/bin/sh
+
+set -eu
+
+MAVEN_VERSION=3.9.9
+WRAPPER_DIR="$(cd "$(dirname "$0")" && pwd)/.mvn/wrapper"
+MAVEN_HOME="$WRAPPER_DIR/apache-maven-$MAVEN_VERSION"
+MAVEN_BIN="$MAVEN_HOME/bin/mvn"
+MAVEN_TGZ="$WRAPPER_DIR/apache-maven-$MAVEN_VERSION-bin.tar.gz"
+DOWNLOAD_URL="https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/$MAVEN_VERSION/apache-maven-$MAVEN_VERSION-bin.tar.gz"
+
+if [ ! -x "$MAVEN_BIN" ]; then
+  mkdir -p "$WRAPPER_DIR"
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL "$DOWNLOAD_URL" -o "$MAVEN_TGZ"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -O "$MAVEN_TGZ" "$DOWNLOAD_URL"
+  else
+    echo "curl or wget is required to download Maven." >&2
+    exit 1
+  fi
+  tar -xzf "$MAVEN_TGZ" -C "$WRAPPER_DIR"
+fi
+
+exec "$MAVEN_BIN" "$@"
