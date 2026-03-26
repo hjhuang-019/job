@@ -26,6 +26,7 @@ public class Job {
     private LocalDateTime reviewedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String enterpriseName;
 
     public Long getId() {
         return id;
@@ -201,5 +202,13 @@ public class Job {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getEnterpriseName() {
+        return enterpriseName;
+    }
+
+    public void setEnterpriseName(String enterpriseName) {
+        this.enterpriseName = enterpriseName;
     }
 }

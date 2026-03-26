@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
@@ -40,6 +41,13 @@ public interface SysUserMapper {
             ORDER BY id DESC
             """)
     List<SysUser> selectAll();
+
+    @Select("""
+            SELECT COUNT(1)
+            FROM sys_user
+            WHERE role = #{role}
+            """)
+    Long countByRole(@Param("role") String role);
 
     @Insert("""
             INSERT INTO sys_user (username, password, role, status, real_name, phone, email, last_login_time)

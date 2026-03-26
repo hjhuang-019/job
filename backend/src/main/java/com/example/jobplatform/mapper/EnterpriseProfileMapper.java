@@ -1,10 +1,12 @@
 package com.example.jobplatform.mapper;
 
 import com.example.jobplatform.entity.EnterpriseProfile;
+import com.example.jobplatform.vo.AdminEnterprisePendingVO;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
@@ -39,6 +41,19 @@ public interface EnterpriseProfileMapper {
             ORDER BY id DESC
             """)
     List<EnterpriseProfile> selectAll();
+
+    @Select("""
+            SELECT p.id, p.user_id, u.username, p.enterprise_name, p.contact_person, p.contact_phone,
+                   p.license_path, p.verify_status, p.created_at
+            FROM enterprise_profile p
+            JOIN sys_user u ON u.id = p.user_id
+            WHERE u.role = 'ENTERPRISE'
+              AND p.verify_status = 'PENDING'
+              AND p.license_path IS NOT NULL
+              AND p.license_path <> ''
+            ORDER BY p.id DESC
+            """)
+    List<AdminEnterprisePendingVO> selectPendingForAdmin();
 
     @Insert("""
             INSERT INTO enterprise_profile (
@@ -82,4 +97,25 @@ public interface EnterpriseProfileMapper {
             DELETE FROM enterprise_profile WHERE id = #{id}
             """)
     int deleteById(Long id);
+
+    @Update("""
+            UPDATE enterprise_profile
+            SET verify_status = #{verifyStatus},
+                verified_by = NULL,
+                verified_at = NULL
+            WHERE id = #{id}
+            """)
+    int updateVerifyStatusAsPending(@Param("id") Long id, @Param("verifyStatus") String verifyStatus);
+
+    @Update("""
+            UPDATE enterprise_profile
+            SET verify_status = #{verifyStatus},
+                verified_by = #{verifiedBy},
+                verified_at = #{verifiedAt}
+            WHERE id = #{id}
+            """)
+    int updateVerifyByAdmin(@Param("id") Long id,
+                            @Param("verifyStatus") String verifyStatus,
+                            @Param("verifiedBy") Long verifiedBy,
+                            @Param("verifiedAt") java.time.LocalDateTime verifiedAt);
 }

@@ -47,6 +47,8 @@ CREATE TABLE job_seeker_profile (
   skills TEXT COMMENT '技能描述',
   expected_city VARCHAR(100) DEFAULT NULL COMMENT '期望城市',
   expected_salary VARCHAR(50) DEFAULT NULL COMMENT '期望薪资',
+  expected_job VARCHAR(100) DEFAULT NULL COMMENT '求职意向岗位',
+  accept_remote TINYINT NOT NULL DEFAULT 0 COMMENT '是否接受远程：0否，1是',
   introduction VARCHAR(500) DEFAULT NULL COMMENT '个人简介',
   certificate_path VARCHAR(255) DEFAULT NULL COMMENT '残疾证或相关证明路径',
   verify_status VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT '审核状态：PENDING/APPROVED/REJECTED',

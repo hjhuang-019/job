@@ -14,6 +14,10 @@ public class JobApplication {
     private LocalDateTime handledTime;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String jobTitle;
+    private String enterpriseName;
+    private String jobSeekerName;
+    private String resumeName;
 
     public Long getId() {
         return id;
@@ -93,5 +97,37 @@ public class JobApplication {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getJobTitle() {
+        return jobTitle;
+    }
+
+    public void setJobTitle(String jobTitle) {
+        this.jobTitle = jobTitle;
+    }
+
+    public String getEnterpriseName() {
+        return enterpriseName;
+    }
+
+    public void setEnterpriseName(String enterpriseName) {
+        this.enterpriseName = enterpriseName;
+    }
+
+    public String getJobSeekerName() {
+        return jobSeekerName;
+    }
+
+    public void setJobSeekerName(String jobSeekerName) {
+        this.jobSeekerName = jobSeekerName;
+    }
+
+    public String getResumeName() {
+        return resumeName;
+    }
+
+    public void setResumeName(String resumeName) {
+        this.resumeName = resumeName;
     }
 }

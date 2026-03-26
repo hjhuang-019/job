@@ -1,7 +1,9 @@
-export function initAccessibility() {
+export function initAccessibility(isFocusHighlightEnabled = () => true) {
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Tab') {
-      document.body.classList.add('user-is-tabbing')
+      if (isFocusHighlightEnabled()) {
+        document.body.classList.add('user-is-tabbing')
+      }
     }
   })
 

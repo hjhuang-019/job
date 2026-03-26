@@ -15,6 +15,8 @@ public class JobSeekerProfile {
     private String skills;
     private String expectedCity;
     private String expectedSalary;
+    private String expectedJob;
+    private Integer acceptRemote;
     private String introduction;
     private String certificatePath;
     private String verifyStatus;
@@ -109,6 +111,22 @@ public class JobSeekerProfile {
 
     public void setIntroduction(String introduction) {
         this.introduction = introduction;
+    }
+
+    public String getExpectedJob() {
+        return expectedJob;
+    }
+
+    public void setExpectedJob(String expectedJob) {
+        this.expectedJob = expectedJob;
+    }
+
+    public Integer getAcceptRemote() {
+        return acceptRemote;
+    }
+
+    public void setAcceptRemote(Integer acceptRemote) {
+        this.acceptRemote = acceptRemote;
     }
 
     public String getCertificatePath() {

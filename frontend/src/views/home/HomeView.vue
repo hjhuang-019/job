@@ -1,7 +1,21 @@
 <template>
-  <section class="home-page">
+  <section class="home-page" aria-label="首页内容区">
     <el-row :gutter="20">
       <el-col :xs="24" :md="14">
+        <el-card shadow="never" class="hero-card">
+          <template #header>
+            <h2>登录状态</h2>
+          </template>
+          <p>当前用户：{{ authStore.userInfo?.realName || authStore.userInfo?.username || '未获取' }}</p>
+          <p>当前角色：{{ roleText }}</p>
+          <img src="/accessibility-banner.svg" alt="无障碍支持示意图：字体、对比度、键盘导航" width="260" />
+          <el-button type="success" :loading="loadingUser" @click="handleLoadUser">
+            获取当前用户信息
+          </el-button>
+        </el-card>
+      </el-col>
+
+      <el-col :xs="24" :md="10">
         <el-card shadow="never" class="hero-card">
           <template #header>
             <h2>项目骨架已创建</h2>
@@ -18,14 +32,16 @@
           </el-button>
         </el-card>
       </el-col>
+    </el-row>
 
-      <el-col :xs="24" :md="10">
+    <el-row :gutter="20">
+      <el-col :xs="24" :md="24">
         <el-card shadow="never" class="status-card">
           <template #header>
             <h2>接口响应结果</h2>
           </template>
 
-          <el-form label-position="top">
+          <el-form label-position="top" aria-label="接口测试结果">
             <el-form-item label="接口状态">
               <el-input :model-value="result.statusText" readonly aria-readonly="true" />
             </el-form-item>
@@ -42,6 +58,7 @@
               />
             </el-form-item>
           </el-form>
+          <p class="sr-only" aria-live="polite">当前接口状态：{{ result.statusText }}，消息：{{ result.message }}</p>
         </el-card>
       </el-col>
     </el-row>
@@ -49,15 +66,35 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { pingServer } from '../../api/test'
+import { useAuthStore } from '../../stores/auth'
 
 const loading = ref(false)
+const loadingUser = ref(false)
+const authStore = useAuthStore()
 const result = reactive({
   statusText: '未请求',
   message: '点击按钮后显示',
   dataText: ''
 })
+
+const roleText = computed(() => {
+  return {
+    JOB_SEEKER: '求职者',
+    ENTERPRISE: '企业',
+    ADMIN: '管理员'
+  }[authStore.userRole] || '未知'
+})
+
+async function handleLoadUser() {
+  loadingUser.value = true
+  try {
+    await authStore.fetchCurrentUser()
+  } finally {
+    loadingUser.value = false
+  }
+}
 
 async function handlePing() {
   loading.value = true

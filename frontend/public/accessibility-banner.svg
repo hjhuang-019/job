@@ -1,0 +1,15 @@
+<svg width="640" height="220" viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">无障碍支持示意图</title>
+  <desc id="desc">图中展示大字体、高对比度、键盘导航三个无障碍能力</desc>
+  <rect x="0" y="0" width="640" height="220" fill="#e6f4ff"/>
+  <rect x="20" y="30" width="180" height="160" rx="12" fill="#1d4ed8"/>
+  <text x="40" y="85" font-size="34" fill="#ffffff" font-family="Microsoft YaHei, sans-serif">A+</text>
+  <text x="40" y="120" font-size="18" fill="#ffffff" font-family="Microsoft YaHei, sans-serif">大字体</text>
+  <rect x="230" y="30" width="180" height="160" rx="12" fill="#111111"/>
+  <circle cx="280" cy="85" r="24" fill="#ffffff"/>
+  <circle cx="360" cy="85" r="24" fill="#00e5ff"/>
+  <text x="250" y="130" font-size="18" fill="#ffffff" font-family="Microsoft YaHei, sans-serif">高对比度</text>
+  <rect x="440" y="30" width="180" height="160" rx="12" fill="#ffffff" stroke="#1d4ed8" stroke-width="3"/>
+  <rect x="470" y="65" width="118" height="34" rx="8" fill="#ffffff" stroke="#f59e0b" stroke-width="4"/>
+  <text x="470" y="130" font-size="18" fill="#1f2937" font-family="Microsoft YaHei, sans-serif">键盘导航</text>
+</svg>

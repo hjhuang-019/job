@@ -22,3 +22,6 @@ logging:
 jwt:
   secret: ReplaceWithAStableSecretKeyForGraduationProject123456
   expiration: 86400000
+
+app:
+  upload-dir: uploads

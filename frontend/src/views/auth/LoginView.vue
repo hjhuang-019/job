@@ -1,5 +1,5 @@
 <template>
-  <section class="auth-page">
+  <section class="auth-page" aria-label="登录页面">
     <el-card shadow="never" class="auth-card">
       <template #header>
         <div class="auth-card-header">
@@ -16,10 +16,12 @@
         :model="form"
         :rules="rules"
         label-position="top"
+        aria-label="登录表单"
         @submit.prevent="handleLogin"
       >
-        <el-form-item label="用户名" prop="username">
+        <el-form-item label="用户名" prop="username" for="username">
           <el-input
+            id="username"
             v-model="form.username"
             name="username"
             autocomplete="username"
@@ -27,8 +29,9 @@
           />
         </el-form-item>
 
-        <el-form-item label="密码" prop="password">
+        <el-form-item label="密码" prop="password" for="password">
           <el-input
+            id="password"
             v-model="form.password"
             name="password"
             type="password"
@@ -39,18 +42,24 @@
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" class="auth-submit" :loading="loading" @click="handleLogin">
+          <el-button
+            type="primary"
+            class="auth-submit"
+            :loading="loading"
+            native-type="submit"
+            aria-label="提交登录"
+          >
             登录
           </el-button>
         </el-form-item>
       </el-form>
 
-      <div class="auth-tips" aria-label="演示账号提示">
+      <aside class="auth-tips" aria-label="演示账号提示">
         <p>演示账号可使用数据库初始化数据：</p>
-        <p>求职者：`seeker01 / 123456`</p>
-        <p>企业：`enterprise01 / 123456`</p>
-        <p>管理员：`admin01 / 123456`</p>
-      </div>
+        <p>求职者：seeker01 / 123456</p>
+        <p>企业：enterprise01 / 123456</p>
+        <p>管理员：admin01 / 123456</p>
+      </aside>
     </el-card>
   </section>
 </template>

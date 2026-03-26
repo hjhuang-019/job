@@ -231,15 +231,17 @@ public class AuthServiceImpl implements AuthService {
         Map<String, Object> profile = new LinkedHashMap<>();
         if (jobSeekerProfile != null) {
             profile.put("profileId", jobSeekerProfile.getId());
-            profile.put("verifyStatus", jobSeekerProfile.getVerifyStatus());
+            profile.put("verifyStatus", normalizeVerifyStatus(jobSeekerProfile.getVerifyStatus()));
             profile.put("disabilityType", jobSeekerProfile.getDisabilityType());
             profile.put("expectedCity", jobSeekerProfile.getExpectedCity());
+            profile.put("expectedJob", jobSeekerProfile.getExpectedJob());
+            profile.put("acceptRemote", jobSeekerProfile.getAcceptRemote() != null && jobSeekerProfile.getAcceptRemote() == 1);
             return profile;
         }
         if (enterpriseProfile != null) {
             profile.put("profileId", enterpriseProfile.getId());
             profile.put("enterpriseName", enterpriseProfile.getEnterpriseName());
-            profile.put("verifyStatus", enterpriseProfile.getVerifyStatus());
+            profile.put("verifyStatus", normalizeVerifyStatus(enterpriseProfile.getVerifyStatus()));
             profile.put("contactPerson", enterpriseProfile.getContactPerson());
             return profile;
         }
@@ -248,5 +250,19 @@ public class AuthServiceImpl implements AuthService {
 
     private String normalize(String value) {
         return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
+    private String normalizeVerifyStatus(String verifyStatus) {
+        if (!StringUtils.hasText(verifyStatus)) {
+            return "PENDING";
+        }
+        String status = verifyStatus.trim().toUpperCase();
+        if ("APPROVED".equals(status) || "PASS".equals(status)) {
+            return "PASS";
+        }
+        if ("REJECTED".equals(status) || "REJECT".equals(status)) {
+            return "REJECT";
+        }
+        return "PENDING";
     }
 }
