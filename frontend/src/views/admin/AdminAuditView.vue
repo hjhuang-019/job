@@ -18,7 +18,14 @@
             <el-table-column prop="disabilityLevel" label="残疾等级" min-width="120" />
             <el-table-column label="证件" min-width="140">
               <template #default="{ row }">
-                <a v-if="row.certificatePath" :href="row.certificatePath" target="_blank" rel="noopener noreferrer">查看证件</a>
+                <el-button
+                  v-if="row.certificatePath"
+                  type="primary"
+                  link
+                  @click="openImagePreview('证件照片', row.certificatePath)"
+                >
+                  查看
+                </el-button>
                 <span v-else>-</span>
               </template>
             </el-table-column>
@@ -39,7 +46,14 @@
             <el-table-column prop="contactPhone" label="联系电话" min-width="140" />
             <el-table-column label="执照" min-width="140">
               <template #default="{ row }">
-                <a v-if="row.licensePath" :href="row.licensePath" target="_blank" rel="noopener noreferrer">查看执照</a>
+                <el-button
+                  v-if="row.licensePath"
+                  type="primary"
+                  link
+                  @click="openImagePreview('营业执照', row.licensePath)"
+                >
+                  查看
+                </el-button>
                 <span v-else>-</span>
               </template>
             </el-table-column>
@@ -53,6 +67,50 @@
         </el-tab-pane>
       </el-tabs>
     </el-card>
+
+    <el-dialog
+      v-model="imagePreviewVisible"
+      :title="imagePreviewTitle"
+      width="90%"
+      align-center
+      class="admin-doc-preview-dialog"
+      aria-label="证件或执照图片预览"
+      @closed="onImagePreviewClosed"
+    >
+      <div class="admin-doc-preview-body">
+        <p v-if="imagePreviewFailed" class="admin-doc-preview-error" role="alert">
+          图片未能加载。开发环境下请确认后端已启动（默认
+          <code>http://localhost:8080</code>
+          ）；若端口不同，可在前端
+          <code>.env.development</code>
+          中设置
+          <code>VITE_UPLOADS_ORIGIN</code>
+          。也可点击「新窗口打开原图」排查。
+        </p>
+        <img
+          v-else-if="imagePreviewSrc"
+          :key="imagePreviewSrc"
+          :src="resolveAssetUrl(imagePreviewSrc)"
+          alt=""
+          class="admin-doc-preview-img"
+          @error="onPreviewImageError"
+        />
+      </div>
+      <template #footer>
+        <div class="admin-doc-preview-footer">
+          <el-link
+            v-if="imagePreviewSrc"
+            :href="resolveAssetUrl(imagePreviewSrc)"
+            target="_blank"
+            rel="noopener noreferrer"
+            type="primary"
+          >
+            新窗口打开原图
+          </el-link>
+          <el-button @click="imagePreviewVisible = false">关闭</el-button>
+        </div>
+      </template>
+    </el-dialog>
 
     <el-dialog v-model="rejectDialogVisible" title="驳回认证" width="520px">
       <el-form label-position="top" aria-label="认证驳回表单">
@@ -95,6 +153,58 @@ const rejectDialogVisible = ref(false)
 const rejectComment = ref('')
 const rejectTarget = ref(null)
 
+const imagePreviewVisible = ref(false)
+const imagePreviewTitle = ref('')
+const imagePreviewSrc = ref('')
+const imagePreviewFailed = ref(false)
+
+/**
+ * 开发环境下 Vite 只代理了部分路径时，相对地址 /uploads 会打到 5173 并返回 HTML，图片区域会空白。
+ * 对 /uploads 直连后端（img 跨端口展示无需 CORS）；生产同域时仍用相对路径即可。
+ */
+function resolveAssetUrl(path) {
+  if (!path || typeof path !== 'string') {
+    return ''
+  }
+  const trimmed = path.trim()
+  if (!trimmed) {
+    return ''
+  }
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed
+  }
+  const normalized = trimmed.startsWith('/') ? trimmed : `/${trimmed}`
+  if (import.meta.env.DEV && normalized.startsWith('/uploads')) {
+    const origin = (
+      import.meta.env.VITE_UPLOADS_ORIGIN ||
+      import.meta.env.VITE_BACKEND_ORIGIN ||
+      'http://localhost:8080'
+    ).replace(/\/$/, '')
+    return `${origin}${normalized}`
+  }
+  return normalized
+}
+
+function openImagePreview(title, path) {
+  if (!path) {
+    return
+  }
+  imagePreviewTitle.value = title
+  imagePreviewSrc.value = path
+  imagePreviewFailed.value = false
+  imagePreviewVisible.value = true
+}
+
+function onPreviewImageError() {
+  imagePreviewFailed.value = true
+  ElMessage.error('图片加载失败')
+}
+
+function onImagePreviewClosed() {
+  imagePreviewSrc.value = ''
+  imagePreviewFailed.value = false
+}
+
 async function loadAll() {
   loading.value = true
   try {
@@ -120,6 +230,7 @@ async function handleVerify(type, row, status, comment = '') {
       ElMessage.success('企业认证审核已更新')
     }
     await loadAll()
+    window.dispatchEvent(new Event('admin-pending-updated'))
   } finally {
     submitting.value = false
   }
@@ -144,3 +255,47 @@ onMounted(() => {
   loadAll()
 })
 </script>
+
+<style scoped>
+.admin-doc-preview-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  padding: 12px;
+  background: var(--el-fill-color-lighter);
+  border-radius: var(--el-border-radius-base);
+}
+
+.admin-doc-preview-error {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--el-text-color-regular);
+}
+
+.admin-doc-preview-error code {
+  font-size: 12px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--el-fill-color);
+}
+
+.admin-doc-preview-img {
+  max-width: 100%;
+  max-height: min(70vh, 720px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.admin-doc-preview-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+}
+</style>

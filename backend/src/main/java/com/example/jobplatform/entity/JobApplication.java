@@ -11,6 +11,9 @@ public class JobApplication {
     private String status;
     private LocalDateTime applyTime;
     private String feedbackContent;
+    private LocalDateTime interviewTime;
+    private String interviewAddress;
+    private String hrContact;
     private LocalDateTime handledTime;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -73,6 +76,30 @@ public class JobApplication {
 
     public void setFeedbackContent(String feedbackContent) {
         this.feedbackContent = feedbackContent;
+    }
+
+    public LocalDateTime getInterviewTime() {
+        return interviewTime;
+    }
+
+    public void setInterviewTime(LocalDateTime interviewTime) {
+        this.interviewTime = interviewTime;
+    }
+
+    public String getInterviewAddress() {
+        return interviewAddress;
+    }
+
+    public void setInterviewAddress(String interviewAddress) {
+        this.interviewAddress = interviewAddress;
+    }
+
+    public String getHrContact() {
+        return hrContact;
+    }
+
+    public void setHrContact(String hrContact) {
+        this.hrContact = hrContact;
     }
 
     public LocalDateTime getHandledTime() {

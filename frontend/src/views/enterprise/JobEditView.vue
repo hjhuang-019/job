@@ -72,12 +72,25 @@
           />
         </el-form-item>
 
-        <el-form-item label="残疾适配类型" prop="disabilitySupportType" for="disabilitySupportType">
-          <el-input
+        <el-form-item label="适合招收的残疾类型" prop="disabilitySupportTypeList" for="disabilitySupportType">
+          <el-select
             id="disabilitySupportType"
-            v-model="form.disabilitySupportType"
-            placeholder="如：听力障碍、肢体障碍（可多项）"
-          />
+            v-model="form.disabilitySupportTypeList"
+            multiple
+            filterable
+            placeholder="请选择本岗位适合的残疾类型（可多选）"
+            class="job-disability-select"
+          >
+            <el-option
+              v-for="opt in DISABILITY_TYPE_OPTIONS"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            />
+          </el-select>
+          <p class="job-disability-hint" role="note">
+            可多选；保存后以逗号拼接写入岗位要求，供求职者筛选与推荐匹配。
+          </p>
         </el-form-item>
 
         <el-form-item label="福利待遇" prop="welfare" for="welfare">
@@ -101,6 +114,11 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getJobDetail, updateJob } from '../../api/jobs'
+import {
+  DISABILITY_TYPE_OPTIONS,
+  parseDisabilityTypesFromStorage,
+  serializeDisabilityTypesForStorage
+} from '../../constants/disability'
 
 const route = useRoute()
 const router = useRouter()
@@ -119,7 +137,7 @@ const form = reactive({
   experienceRequirement: '',
   workMode: 'OFFLINE',
   skillRequirements: '',
-  disabilitySupportType: '',
+  disabilitySupportTypeList: [],
   welfare: '',
   jobDescription: ''
 })
@@ -142,7 +160,7 @@ function fillForm(data = {}) {
   form.experienceRequirement = data.experienceRequirement || ''
   form.workMode = data.workMode || 'OFFLINE'
   form.skillRequirements = data.skillRequirements || ''
-  form.disabilitySupportType = data.disabilitySupportType || ''
+  form.disabilitySupportTypeList = parseDisabilityTypesFromStorage(data.disabilitySupportType || '')
   form.welfare = data.welfare || ''
   form.jobDescription = data.jobDescription || ''
 }
@@ -181,7 +199,7 @@ async function handleSubmit() {
       experienceRequirement: form.experienceRequirement,
       workMode: form.workMode,
       skillRequirements: form.skillRequirements,
-      disabilitySupportType: form.disabilitySupportType,
+      disabilitySupportType: serializeDisabilityTypesForStorage(form.disabilitySupportTypeList),
       welfare: form.welfare,
       jobDescription: form.jobDescription
     }
@@ -197,3 +215,16 @@ onMounted(() => {
   loadDetail()
 })
 </script>
+
+<style scoped>
+.job-disability-select {
+  width: 100%;
+}
+
+.job-disability-hint {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--el-text-color-secondary);
+}
+</style>

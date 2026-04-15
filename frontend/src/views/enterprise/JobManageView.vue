@@ -4,9 +4,19 @@
       <template #header>
         <div class="section-header">
           <h2>岗位管理</h2>
-          <el-button type="primary" @click="goPublish">发布岗位</el-button>
+          <el-button type="primary" :disabled="authStore.isBlacklisted" @click="goPublish">发布岗位</el-button>
         </div>
       </template>
+
+      <el-alert
+        v-if="authStore.isBlacklisted"
+        type="warning"
+        show-icon
+        :closable="false"
+        class="blacklist-page-alert"
+        title="您的企业账号已被列入黑名单，无法发布新岗位或上架岗位。请联系管理员解除。"
+        role="status"
+      />
 
       <el-table
         v-loading="loading"
@@ -37,6 +47,7 @@
               v-if="row.status !== 'OPEN'"
               link
               type="success"
+              :disabled="authStore.isBlacklisted"
               @click="handleChangeStatus(row, 'OPEN')"
             >
               上架
@@ -54,12 +65,18 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { deleteJob, getMyJobs, updateJobStatus } from '../../api/jobs'
+import { useAuthStore } from '../../stores/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const loading = ref(false)
 const jobList = ref([])
 
 function goPublish() {
+  if (authStore.isBlacklisted) {
+    ElMessage.warning('您的企业账号已被列入黑名单，无法发布新岗位')
+    return
+  }
   router.push('/enterprise/jobs/publish')
 }
 
@@ -117,6 +134,10 @@ async function handleDelete(row) {
 }
 
 async function handleChangeStatus(row, targetStatus) {
+  if (targetStatus === 'OPEN' && authStore.isBlacklisted) {
+    ElMessage.warning('您的企业账号已被列入黑名单，无法上架岗位')
+    return
+  }
   const actionText = targetStatus === 'OPEN' ? '上架' : '下架'
   await updateJobStatus(row.id, targetStatus)
   ElMessage.success(`岗位${actionText}成功`)
@@ -124,6 +145,15 @@ async function handleChangeStatus(row, targetStatus) {
 }
 
 onMounted(() => {
+  if (authStore.token) {
+    authStore.fetchCurrentUser().catch(() => {})
+  }
   loadMyJobs()
 })
 </script>
+
+<style scoped>
+.blacklist-page-alert {
+  margin-bottom: 16px;
+}
+</style>

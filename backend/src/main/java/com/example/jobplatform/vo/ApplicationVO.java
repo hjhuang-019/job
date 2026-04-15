@@ -14,6 +14,9 @@ public class ApplicationVO {
     private String resumeName;
     private String status;
     private String remark;
+    private LocalDateTime interviewTime;
+    private String interviewAddress;
+    private String hrContact;
     private LocalDateTime applyTime;
     private LocalDateTime handledTime;
 
@@ -95,6 +98,30 @@ public class ApplicationVO {
 
     public void setRemark(String remark) {
         this.remark = remark;
+    }
+
+    public LocalDateTime getInterviewTime() {
+        return interviewTime;
+    }
+
+    public void setInterviewTime(LocalDateTime interviewTime) {
+        this.interviewTime = interviewTime;
+    }
+
+    public String getInterviewAddress() {
+        return interviewAddress;
+    }
+
+    public void setInterviewAddress(String interviewAddress) {
+        this.interviewAddress = interviewAddress;
+    }
+
+    public String getHrContact() {
+        return hrContact;
+    }
+
+    public void setHrContact(String hrContact) {
+        this.hrContact = hrContact;
     }
 
     public LocalDateTime getApplyTime() {

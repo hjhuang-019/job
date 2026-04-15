@@ -11,6 +11,19 @@
         </div>
       </template>
 
+      <el-alert
+        v-if="authStore.userRole === 'ADMIN' && pendingVerifyTotal > 0"
+        type="warning"
+        :closable="false"
+        show-icon
+        class="message-admin-pending-alert"
+        role="status"
+      >
+        当前有 <strong>{{ pendingVerifyTotal }}</strong> 条待处理认证，请前往
+        <RouterLink class="message-admin-pending-link" to="/admin/audits">认证审核</RouterLink>
+        处理。
+      </el-alert>
+
       <el-table
         v-loading="loading"
         :data="messages"
@@ -26,7 +39,11 @@
           <template #default="{ row }">{{ typeText(row.messageType) }}</template>
         </el-table-column>
         <el-table-column prop="title" label="标题" min-width="180" />
-        <el-table-column prop="content" label="内容" min-width="320" />
+        <el-table-column prop="content" label="内容" min-width="320">
+          <template #default="{ row }">
+            <EnterpriseApplyMessageContent :row="row" :user-role="authStore.userRole" />
+          </template>
+        </el-table-column>
         <el-table-column prop="createdAt" label="时间" min-width="180" />
         <el-table-column label="操作" width="120" fixed="right">
           <template #default="{ row }">
@@ -40,28 +57,60 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getMessages, getUnreadCount, markMessageRead } from '../api/messages'
+import { getAdminPendingVerifyCount } from '../api/admin'
+import { useAuthStore } from '../stores/auth'
+import { registerJobSeekerVoicePage } from '../voice/jobSeekerVoiceRegistry'
+import EnterpriseApplyMessageContent from '../components/EnterpriseApplyMessageContent.vue'
 
+const route = useRoute()
+const authStore = useAuthStore()
 const loading = ref(false)
 const messages = ref([])
 const unreadCount = ref(0)
+const pendingVerifyTotal = ref(0)
 
 function typeText(type) {
   return {
     SYSTEM: '系统通知',
     APPLY_STATUS: '投递状态',
-    AUDIT_NOTICE: '审核通知'
+    APPLY_RECEIVED: '新简历投递',
+    AUDIT_NOTICE: '审核通知',
+    USER_FEEDBACK: '用户反馈'
   }[type] || type
+}
+
+async function loadPendingVerifyHint() {
+  if (authStore.userRole !== 'ADMIN') {
+    pendingVerifyTotal.value = 0
+    return
+  }
+  try {
+    const resp = await getAdminPendingVerifyCount()
+    pendingVerifyTotal.value = Number(resp.data?.total ?? 0)
+  } catch (error) {
+    pendingVerifyTotal.value = 0
+  }
 }
 
 async function loadMessages() {
   loading.value = true
   try {
-    const [listResp, countResp] = await Promise.all([getMessages(), getUnreadCount()])
-    messages.value = listResp.data || []
-    unreadCount.value = Number(countResp.data?.count || 0)
+    const promises = [getMessages(), getUnreadCount()]
+    if (authStore.userRole === 'ADMIN') {
+      promises.push(getAdminPendingVerifyCount())
+    }
+    const results = await Promise.all(promises)
+    messages.value = results[0].data || []
+    unreadCount.value = Number(results[1].data?.count || 0)
+    if (authStore.userRole === 'ADMIN' && results[2]) {
+      pendingVerifyTotal.value = Number(results[2].data?.total ?? 0)
+    } else {
+      pendingVerifyTotal.value = 0
+    }
   } catch (error) {
     ElMessage.error('加载消息失败，请稍后重试')
   } finally {
@@ -76,7 +125,43 @@ async function handleRead(row) {
   window.dispatchEvent(new Event('message-updated'))
 }
 
+let unregisterVoicePage = () => {}
+
+function onAdminPendingUpdated() {
+  loadPendingVerifyHint()
+}
+
 onMounted(() => {
+  if (authStore.userRole === 'JOB_SEEKER') {
+    unregisterVoicePage = registerJobSeekerVoicePage(route.name, {
+      getPageContext: () => ({
+        unread: unreadCount.value,
+        messages: messages.value.slice(0, 10).map((m) => ({
+          title: m.title,
+          read: m.read,
+          type: m.messageType
+        }))
+      }),
+      onInterpret: () => {}
+    })
+  }
   loadMessages()
+  window.addEventListener('admin-pending-updated', onAdminPendingUpdated)
+})
+
+onUnmounted(() => {
+  unregisterVoicePage()
+  window.removeEventListener('admin-pending-updated', onAdminPendingUpdated)
 })
 </script>
+
+<style scoped>
+.message-admin-pending-alert {
+  margin-bottom: 16px;
+}
+
+.message-admin-pending-link {
+  font-weight: 600;
+  text-decoration: underline;
+}
+</style>

@@ -78,6 +78,13 @@ public class ResumeServiceImpl implements ResumeService {
         Resume update = buildResumeFromRequest(request);
         update.setId(exist.getId());
         update.setIsDefault(shouldSetDefault ? 1 : 0);
+        // 动态 SQL 对残疾字段曾用 if 判断，单参数下偶发不写入；改为 UPDATE 始终写两列，请求未带键时保留原值
+        if (request.getDisabilityType() == null) {
+            update.setDisabilityType(exist.getDisabilityType());
+        }
+        if (request.getDisabilityLevel() == null) {
+            update.setDisabilityLevel(exist.getDisabilityLevel());
+        }
         if (resumeMapper.updateById(update) <= 0) {
             throw new BusinessException("更新简历失败");
         }
@@ -99,6 +106,9 @@ public class ResumeServiceImpl implements ResumeService {
                 Resume setDefaultResume = new Resume();
                 setDefaultResume.setId(latestResume.getId());
                 setDefaultResume.setIsDefault(1);
+                // updateById 始终写入 disability 列，需带上当前行原值以免被置空
+                setDefaultResume.setDisabilityType(latestResume.getDisabilityType());
+                setDefaultResume.setDisabilityLevel(latestResume.getDisabilityLevel());
                 resumeMapper.updateById(setDefaultResume);
             }
         }
@@ -135,6 +145,12 @@ public class ResumeServiceImpl implements ResumeService {
         resume.setProjectExperience(normalize(request.getProjectExperience()));
         resume.setSkillSummary(normalize(request.getSkills()));
         resume.setContentText(normalize(request.getSelfEvaluation()));
+        if (request.getDisabilityType() != null) {
+            resume.setDisabilityType(trimDisabilityField(request.getDisabilityType()));
+        }
+        if (request.getDisabilityLevel() != null) {
+            resume.setDisabilityLevel(trimDisabilityField(request.getDisabilityLevel()));
+        }
         return resume;
     }
 
@@ -150,6 +166,8 @@ public class ResumeServiceImpl implements ResumeService {
         vo.setProjectExperience(resume.getProjectExperience());
         vo.setSkills(resume.getSkillSummary());
         vo.setSelfEvaluation(resume.getContentText());
+        vo.setDisabilityType(resume.getDisabilityType());
+        vo.setDisabilityLevel(resume.getDisabilityLevel());
         vo.setIsDefault(resume.getIsDefault() != null && resume.getIsDefault() == 1);
         vo.setCreatedAt(resume.getCreatedAt());
         vo.setUpdatedAt(resume.getUpdatedAt());
@@ -158,5 +176,13 @@ public class ResumeServiceImpl implements ResumeService {
 
     private String normalize(String value) {
         return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
+    /** 允许写入空串以清空库中残疾字段；null 表示请求体未携带该键时不更新 */
+    private String trimDisabilityField(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.trim();
     }
 }

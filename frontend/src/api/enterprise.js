@@ -11,11 +11,7 @@ export function updateEnterpriseProfile(data) {
 export function uploadEnterpriseLicense(file) {
   const formData = new FormData()
   formData.append('file', file)
-  return http.post('/enterprise/license', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  })
+  return http.post('/enterprise/license', formData)
 }
 
 export function submitEnterpriseVerify() {

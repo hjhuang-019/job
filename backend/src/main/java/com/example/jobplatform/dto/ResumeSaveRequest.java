@@ -24,6 +24,12 @@ public class ResumeSaveRequest {
     @Size(max = 4000, message = "自我评价长度不能超过4000位")
     private String selfEvaluation;
 
+    @Size(max = 200, message = "残疾类型长度不能超过200位")
+    private String disabilityType;
+
+    @Size(max = 20, message = "残疾等级长度不能超过20位")
+    private String disabilityLevel;
+
     private Boolean isDefault;
 
     public String getTitle() {
@@ -72,6 +78,22 @@ public class ResumeSaveRequest {
 
     public void setSelfEvaluation(String selfEvaluation) {
         this.selfEvaluation = selfEvaluation;
+    }
+
+    public String getDisabilityType() {
+        return disabilityType;
+    }
+
+    public void setDisabilityType(String disabilityType) {
+        this.disabilityType = disabilityType;
+    }
+
+    public String getDisabilityLevel() {
+        return disabilityLevel;
+    }
+
+    public void setDisabilityLevel(String disabilityLevel) {
+        this.disabilityLevel = disabilityLevel;
     }
 
     public Boolean getIsDefault() {

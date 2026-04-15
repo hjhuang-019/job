@@ -31,9 +31,17 @@ export const useAuthStore = defineStore('auth', {
   }),
   getters: {
     isLoggedIn: (state) => Boolean(state.token),
-    userRole: (state) => state.userInfo?.role || ''
+    userRole: (state) => state.userInfo?.role || '',
+    isBlacklisted: (state) => Boolean(state.userInfo?.blacklisted)
   },
   actions: {
+    unwrapPayload(response) {
+      // http interceptor already returns response.data; keep compatibility if it changes.
+      if (response && typeof response === 'object' && 'data' in response) {
+        return response.data
+      }
+      return response
+    },
     setToken(token) {
       this.token = token || ''
       if (this.token) {
@@ -69,7 +77,7 @@ export const useAuthStore = defineStore('auth', {
     },
     async login(loginForm) {
       const response = await loginApi(loginForm)
-      const loginData = response.data
+      const loginData = this.unwrapPayload(response) || {}
       this.setToken(loginData?.token || '')
       this.setUserInfo(loginData?.userInfo || null)
       this.initialized = true
@@ -89,8 +97,9 @@ export const useAuthStore = defineStore('auth', {
 
       try {
         const response = await getCurrentUser()
-        this.setUserInfo(response.data || null)
-        return response.data || null
+        const userData = this.unwrapPayload(response) || null
+        this.setUserInfo(userData)
+        return userData
       } catch (error) {
         this.clearAuth()
         throw error

@@ -11,6 +11,8 @@ public class ResumeVO {
     private String projectExperience;
     private String skills;
     private String selfEvaluation;
+    private String disabilityType;
+    private String disabilityLevel;
     private Boolean isDefault;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -69,6 +71,22 @@ public class ResumeVO {
 
     public void setSelfEvaluation(String selfEvaluation) {
         this.selfEvaluation = selfEvaluation;
+    }
+
+    public String getDisabilityType() {
+        return disabilityType;
+    }
+
+    public void setDisabilityType(String disabilityType) {
+        this.disabilityType = disabilityType;
+    }
+
+    public String getDisabilityLevel() {
+        return disabilityLevel;
+    }
+
+    public void setDisabilityLevel(String disabilityLevel) {
+        this.disabilityLevel = disabilityLevel;
     }
 
     public Boolean getIsDefault() {

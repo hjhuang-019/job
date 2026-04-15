@@ -13,7 +13,6 @@ import ResumeEditView from '../views/jobseeker/ResumeEditView.vue'
 import JobListView from '../views/jobseeker/JobListView.vue'
 import JobDetailView from '../views/jobseeker/JobDetailView.vue'
 import MyApplicationsView from '../views/jobseeker/MyApplicationsView.vue'
-import RecommendJobsView from '../views/jobseeker/RecommendJobsView.vue'
 import EnterpriseProfileView from '../views/enterprise/EnterpriseProfileView.vue'
 import EnterpriseVerifyView from '../views/enterprise/EnterpriseVerifyView.vue'
 import JobPublishView from '../views/enterprise/JobPublishView.vue'
@@ -23,6 +22,8 @@ import JobApplicationsView from '../views/enterprise/JobApplicationsView.vue'
 import MessageCenterView from '../views/MessageCenterView.vue'
 import AdminAuditView from '../views/admin/AdminAuditView.vue'
 import AdminStatisticsView from '../views/admin/AdminStatisticsView.vue'
+import AdminFeedbackView from '../views/admin/AdminFeedbackView.vue'
+import UserFeedbackView from '../views/feedback/UserFeedbackView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -138,7 +139,7 @@ const router = createRouter({
           name: 'jobList',
           component: JobListView,
           meta: {
-            title: '岗位列表',
+            title: '岗位浏览',
             requiresAuth: true,
             roles: ['JOB_SEEKER']
           }
@@ -165,13 +166,7 @@ const router = createRouter({
         },
         {
           path: 'recommend/jobs',
-          name: 'recommendJobs',
-          component: RecommendJobsView,
-          meta: {
-            title: '推荐岗位',
-            requiresAuth: true,
-            roles: ['JOB_SEEKER']
-          }
+          redirect: { name: 'jobList' }
         },
         {
           path: 'messages',
@@ -243,11 +238,39 @@ const router = createRouter({
           }
         },
         {
+          path: 'feedback/contact-admin',
+          name: 'userFeedbackContact',
+          component: UserFeedbackView,
+          meta: {
+            title: '联系管理员',
+            requiresAuth: true,
+            roles: ['JOB_SEEKER', 'ENTERPRISE']
+          }
+        },
+        {
           path: 'admin/audits',
           name: 'adminAudits',
           component: AdminAuditView,
           meta: {
             title: '认证审核',
+            requiresAuth: true,
+            roles: ['ADMIN']
+          }
+        },
+        {
+          path: 'admin/users',
+          redirect: { name: 'adminStatistics' },
+          meta: {
+            requiresAuth: true,
+            roles: ['ADMIN']
+          }
+        },
+        {
+          path: 'admin/feedback',
+          name: 'adminFeedback',
+          component: AdminFeedbackView,
+          meta: {
+            title: '用户反馈',
             requiresAuth: true,
             roles: ['ADMIN']
           }
@@ -274,6 +297,20 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   const authStore = useAuthStore(pinia)
+  const storedToken = localStorage.getItem('job-platform-token') || ''
+  const storedUserRaw = localStorage.getItem('job-platform-user') || ''
+
+  if (!authStore.token && storedToken) {
+    authStore.setToken(storedToken)
+  }
+
+  if (!authStore.userInfo && storedUserRaw) {
+    try {
+      authStore.setUserInfo(JSON.parse(storedUserRaw))
+    } catch (error) {
+      authStore.setUserInfo(null)
+    }
+  }
 
   if (!authStore.initialized && authStore.token) {
     try {

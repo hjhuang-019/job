@@ -36,6 +36,7 @@
               <div class="el-upload__tip">支持 jpg/jpeg/png/gif/webp</div>
             </template>
           </el-upload>
+          <p v-if="selectedFileName" class="selected-file-tip">已选择：{{ selectedFileName }}</p>
         </el-form-item>
 
         <el-form-item>
@@ -53,17 +54,22 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
 import { getJobSeekerProfile, submitJobSeekerVerify, uploadCertificate } from '../../api/jobseeker'
+import { registerJobSeekerVoicePage } from '../../voice/jobSeekerVoiceRegistry'
 
+const route = useRoute()
 const loading = ref(false)
 const uploading = ref(false)
 const submitting = ref(false)
 const selectedFile = ref(null)
+const selectedFileName = ref('')
 const certificatePath = ref('')
 const verifyStatus = ref('PENDING')
+const ALLOW_IMAGE_EXT = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp'])
 
 const verifyStatusText = computed(() => {
   return {
@@ -97,7 +103,21 @@ async function loadProfile() {
 }
 
 function handleFileChange(file) {
-  selectedFile.value = file.raw || null
+  const rawFile = file?.raw || null
+  if (!rawFile) {
+    selectedFile.value = null
+    selectedFileName.value = ''
+    return
+  }
+  const ext = rawFile.name?.split('.').pop()?.toLowerCase()
+  if (!ext || !ALLOW_IMAGE_EXT.has(ext)) {
+    selectedFile.value = null
+    selectedFileName.value = ''
+    ElMessage.error('仅支持 jpg/jpeg/png/gif/webp 格式图片')
+    return
+  }
+  selectedFile.value = rawFile
+  selectedFileName.value = rawFile.name || ''
 }
 
 async function handleUpload() {
@@ -112,6 +132,9 @@ async function handleUpload() {
     verifyStatus.value = 'PENDING'
     ElMessage.success('证件上传成功')
     selectedFile.value = null
+    selectedFileName.value = ''
+  } catch (error) {
+    // Error toast is handled by http interceptor.
   } finally {
     uploading.value = false
   }
@@ -128,8 +151,22 @@ async function handleSubmitVerify() {
   }
 }
 
+let unregisterVoicePage = () => {}
+
 onMounted(() => {
+  unregisterVoicePage = registerJobSeekerVoicePage(route.name, {
+    getPageContext: () => ({
+      verifyStatus: verifyStatus.value,
+      certificateUploaded: Boolean(certificatePath.value),
+      selectedFileName: selectedFileName.value || null
+    }),
+    onInterpret: () => {}
+  })
   loadProfile()
+})
+
+onUnmounted(() => {
+  unregisterVoicePage()
 })
 </script>
 

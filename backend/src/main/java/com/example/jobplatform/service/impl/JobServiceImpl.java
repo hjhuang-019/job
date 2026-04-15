@@ -3,8 +3,10 @@ package com.example.jobplatform.service.impl;
 import com.example.jobplatform.common.BusinessException;
 import com.example.jobplatform.dto.JobSaveRequest;
 import com.example.jobplatform.entity.Job;
+import com.example.jobplatform.entity.JobSeekerProfile;
 import com.example.jobplatform.entity.SysUser;
 import com.example.jobplatform.mapper.JobMapper;
+import com.example.jobplatform.mapper.JobSeekerProfileMapper;
 import com.example.jobplatform.mapper.SysUserMapper;
 import com.example.jobplatform.security.UserContext;
 import com.example.jobplatform.service.JobService;
@@ -15,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -30,16 +34,19 @@ public class JobServiceImpl implements JobService {
 
     private final JobMapper jobMapper;
     private final SysUserMapper sysUserMapper;
+    private final JobSeekerProfileMapper jobSeekerProfileMapper;
 
-    public JobServiceImpl(JobMapper jobMapper, SysUserMapper sysUserMapper) {
+    public JobServiceImpl(JobMapper jobMapper, SysUserMapper sysUserMapper, JobSeekerProfileMapper jobSeekerProfileMapper) {
         this.jobMapper = jobMapper;
         this.sysUserMapper = sysUserMapper;
+        this.jobSeekerProfileMapper = jobSeekerProfileMapper;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public JobVO create(JobSaveRequest request) {
         Long userId = getCurrentEnterpriseUserId();
+        assertEnterpriseNotBlacklisted(userId);
         validateSalary(request.getSalaryMin(), request.getSalaryMax());
 
         Job job = buildJobFromRequest(request);
@@ -67,21 +74,34 @@ public class JobServiceImpl implements JobService {
         String normalizedCity = normalize(city);
         String normalizedWorkMode = normalizeWorkModeForFilter(workMode);
         String normalizedDisabilitySupportType = normalize(disabilitySupportType);
+        List<String> disabilityFilterTokens = splitDisabilityTokens(normalizedDisabilitySupportType);
+        List<String> tokenParam = disabilityFilterTokens.isEmpty() ? null : disabilityFilterTokens;
 
-        List<JobVO> records = jobMapper.selectPublishedByPage(
+        List<Job> all = jobMapper.selectPublishedForSeekerBrowse(
                 normalizedKeyword,
                 normalizedCity,
                 normalizedWorkMode,
-                normalizedDisabilitySupportType,
-                offset,
-                validPageSize
-        ).stream().map(this::toVO).collect(Collectors.toList());
-        Long total = jobMapper.countPublished(
-                normalizedKeyword,
-                normalizedCity,
-                normalizedWorkMode,
-                normalizedDisabilitySupportType
+                tokenParam
         );
+        Long total = jobMapper.countPublishedForSeekerBrowse(
+                normalizedKeyword,
+                normalizedCity,
+                normalizedWorkMode,
+                tokenParam
+        );
+
+        JobSeekerProfile profile = jobSeekerProfileMapper.selectByUserId(user.getId());
+        List<String> seekerDisabilityParts = profile != null ? splitDisabilityTokens(profile.getDisabilityType()) : List.of();
+        all.sort(disabilityMatchComparator(seekerDisabilityParts));
+
+        int from = offset;
+        int to = Math.min(offset + validPageSize, all.size());
+        List<JobVO> records;
+        if (from >= all.size()) {
+            records = List.of();
+        } else {
+            records = all.subList(from, to).stream().map(this::toVO).collect(Collectors.toList());
+        }
 
         JobPageVO page = new JobPageVO();
         page.setRecords(records);
@@ -137,6 +157,9 @@ public class JobServiceImpl implements JobService {
         if (!canTransit(exists.getStatus(), targetStatus)) {
             throw new BusinessException(400, "当前岗位状态不允许变更到目标状态");
         }
+        if (STATUS_OPEN.equals(targetStatus)) {
+            assertEnterpriseNotBlacklisted(userId);
+        }
 
         Job update = new Job();
         update.setId(exists.getId());
@@ -185,6 +208,13 @@ public class JobServiceImpl implements JobService {
             throw new BusinessException(404, "用户不存在");
         }
         return user;
+    }
+
+    private void assertEnterpriseNotBlacklisted(Long enterpriseUserId) {
+        SysUser enterpriseUser = sysUserMapper.selectById(enterpriseUserId);
+        if (enterpriseUser != null && enterpriseUser.getBlacklisted() != null && enterpriseUser.getBlacklisted() == 1) {
+            throw new BusinessException(403, "您的企业账号已被列入黑名单，无法新建或上架岗位。请联系管理员解除。");
+        }
     }
 
     private Job getOwnJob(Long userId, Long jobId) {
@@ -328,5 +358,42 @@ public class JobServiceImpl implements JobService {
 
     private String normalize(String value) {
         return StringUtils.hasText(value) ? value.trim() : null;
+    }
+
+    /** 与个人中心 disability_type 存储规则一致：逗号/顿号等分隔 */
+    private List<String> splitDisabilityTokens(String raw) {
+        if (!StringUtils.hasText(raw)) {
+            return List.of();
+        }
+        return Arrays.stream(raw.split("[,，、;；\\s]+"))
+                .map(String::trim)
+                .filter(StringUtils::hasText)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 岗位浏览排序：求职者资料中每种残疾类型在岗位「适合招收的残疾类型」文案中命中则计 1 分，分高靠前；不向前端返回分值。
+     */
+    private Comparator<Job> disabilityMatchComparator(List<String> seekerParts) {
+        return Comparator
+                .comparingInt((Job j) -> countDisabilityTokenHits(seekerParts, j.getDisabilitySupportType()))
+                .reversed()
+                .thenComparing(Job::getPublishTime, Comparator.nullsLast(Comparator.reverseOrder()))
+                .thenComparing(Job::getId, Comparator.reverseOrder());
+    }
+
+    private int countDisabilityTokenHits(List<String> seekerParts, String supportType) {
+        if (seekerParts.isEmpty() || !StringUtils.hasText(supportType)) {
+            return 0;
+        }
+        String st = supportType.toLowerCase(Locale.ROOT);
+        int n = 0;
+        for (String p : seekerParts) {
+            String t = p.trim().toLowerCase(Locale.ROOT);
+            if (StringUtils.hasText(t) && st.contains(t)) {
+                n++;
+            }
+        }
+        return n;
     }
 }

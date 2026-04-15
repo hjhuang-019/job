@@ -67,6 +67,7 @@ public class AuthServiceImpl implements AuthService {
 
         JobSeekerProfile profile = new JobSeekerProfile();
         profile.setUserId(sysUser.getId());
+        profile.setAcceptRemote(0);
         profile.setVerifyStatus("PENDING");
         if (jobSeekerProfileMapper.insert(profile) <= 0) {
             throw new BusinessException("求职者资料初始化失败");
@@ -223,6 +224,7 @@ public class AuthServiceImpl implements AuthService {
         currentUserVO.setPhone(sysUser.getPhone());
         currentUserVO.setEmail(sysUser.getEmail());
         currentUserVO.setLastLoginTime(sysUser.getLastLoginTime());
+        currentUserVO.setBlacklisted(sysUser.getBlacklisted() != null && sysUser.getBlacklisted() == 1);
         currentUserVO.setProfile(buildProfileMap(jobSeekerProfile, enterpriseProfile));
         return currentUserVO;
     }

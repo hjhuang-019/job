@@ -125,8 +125,14 @@ public class RecommendServiceImpl implements RecommendService {
         if (!StringUtils.hasText(disabilityType) || !StringUtils.hasText(supportType)) {
             return 0;
         }
-        return supportType.toLowerCase(Locale.ROOT).contains(disabilityType.trim().toLowerCase(Locale.ROOT))
-                ? DISABILITY_SCORE : 0;
+        String st = supportType.toLowerCase(Locale.ROOT);
+        for (String part : disabilityType.split("[,，、\\s]+")) {
+            String t = part.trim().toLowerCase(Locale.ROOT);
+            if (StringUtils.hasText(t) && st.contains(t)) {
+                return DISABILITY_SCORE;
+            }
+        }
+        return 0;
     }
 
     private int calcWorkModeScore(Integer acceptRemote, String workMode) {

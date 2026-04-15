@@ -10,6 +10,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS favorite_job;
 DROP TABLE IF EXISTS sys_audit_log;
 DROP TABLE IF EXISTS sys_announcement;
+DROP TABLE IF EXISTS sys_user_feedback;
 DROP TABLE IF EXISTS sys_message;
 DROP TABLE IF EXISTS job_application;
 DROP TABLE IF EXISTS job;
@@ -24,6 +25,10 @@ CREATE TABLE sys_user (
   password VARCHAR(100) NOT NULL COMMENT 'BCrypt加密密码',
   role VARCHAR(20) NOT NULL COMMENT '角色：JOB_SEEKER/ENTERPRISE/ADMIN',
   status TINYINT NOT NULL DEFAULT 1 COMMENT '状态：0禁用，1正常',
+  blacklisted TINYINT NOT NULL DEFAULT 0 COMMENT '是否黑名单：0否 1是',
+  blacklisted_at DATETIME DEFAULT NULL COMMENT '列入黑名单时间',
+  blacklisted_by BIGINT DEFAULT NULL COMMENT '操作管理员用户ID',
+  blacklist_reason VARCHAR(500) DEFAULT NULL COMMENT '拉黑原因',
   real_name VARCHAR(50) DEFAULT NULL COMMENT '真实姓名',
   phone VARCHAR(20) DEFAULT NULL COMMENT '手机号',
   email VARCHAR(100) DEFAULT NULL COMMENT '邮箱',
@@ -35,6 +40,23 @@ CREATE TABLE sys_user (
   KEY idx_sys_user_role (role),
   KEY idx_sys_user_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统用户表';
+
+CREATE TABLE sys_user_feedback (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '用户反馈工单ID',
+  sender_user_id BIGINT NOT NULL COMMENT '提交人用户ID',
+  category VARCHAR(30) NOT NULL DEFAULT 'GENERAL' COMMENT '类型：GENERAL一般咨询/BLACKLIST_APPEAL黑名单申诉',
+  title VARCHAR(150) NOT NULL COMMENT '标题',
+  content TEXT NOT NULL COMMENT '正文',
+  status VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT '状态：PENDING/RESOLVED',
+  admin_user_id BIGINT DEFAULT NULL COMMENT '处理管理员用户ID',
+  admin_remark VARCHAR(500) DEFAULT NULL COMMENT '管理员处理备注',
+  handled_at DATETIME DEFAULT NULL COMMENT '处理时间',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  KEY idx_user_feedback_sender (sender_user_id),
+  KEY idx_user_feedback_status_created (status, created_at),
+  CONSTRAINT fk_user_feedback_sender FOREIGN KEY (sender_user_id) REFERENCES sys_user (id),
+  CONSTRAINT fk_user_feedback_admin FOREIGN KEY (admin_user_id) REFERENCES sys_user (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户反馈工单（黑名单申诉等）';
 
 CREATE TABLE job_seeker_profile (
   id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '求职者资料ID',
@@ -96,6 +118,8 @@ CREATE TABLE resume (
   work_experience TEXT COMMENT '工作经历',
   project_experience TEXT COMMENT '项目经历',
   skill_summary TEXT COMMENT '技能总结',
+  disability_type VARCHAR(200) DEFAULT NULL COMMENT '残疾类别（多选逗号分隔）',
+  disability_level VARCHAR(20) DEFAULT NULL COMMENT '残疾等级',
   is_default TINYINT NOT NULL DEFAULT 0 COMMENT '是否默认简历：0否，1是',
   status TINYINT NOT NULL DEFAULT 1 COMMENT '状态：0停用，1正常',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -143,10 +167,13 @@ CREATE TABLE job_application (
   status VARCHAR(20) NOT NULL DEFAULT 'PENDING' COMMENT '投递状态：PENDING/VIEWED/INTERVIEW/PASSED/REJECTED/WITHDRAWN',
   apply_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '投递时间',
   feedback_content VARCHAR(500) DEFAULT NULL COMMENT '企业反馈内容',
+  interview_time DATETIME DEFAULT NULL COMMENT '面试时间',
+  interview_address VARCHAR(300) DEFAULT NULL COMMENT '面试地址',
+  hr_contact VARCHAR(120) DEFAULT NULL COMMENT 'HR联系方式',
   handled_time DATETIME DEFAULT NULL COMMENT '处理时间',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  UNIQUE KEY uk_job_application_unique (job_id, job_seeker_user_id),
+  KEY idx_job_application_job_seeker (job_id, job_seeker_user_id),
   KEY idx_job_application_status (status),
   KEY idx_job_application_apply_time (apply_time),
   CONSTRAINT fk_job_application_job_id FOREIGN KEY (job_id) REFERENCES job (id),

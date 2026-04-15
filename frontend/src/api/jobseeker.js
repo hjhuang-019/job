@@ -11,11 +11,7 @@ export function updateJobSeekerProfile(data) {
 export function uploadCertificate(file) {
   const formData = new FormData()
   formData.append('file', file)
-  return http.post('/jobseeker/certificate', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  })
+  return http.post('/jobseeker/certificate', formData)
 }
 
 export function submitJobSeekerVerify() {

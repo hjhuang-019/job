@@ -8,7 +8,17 @@
         </div>
       </template>
 
-      <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
+      <el-alert
+        v-if="authStore.isBlacklisted"
+        type="warning"
+        show-icon
+        :closable="false"
+        class="blacklist-page-alert"
+        title="您的企业账号已被列入黑名单，无法新建岗位。请联系管理员解除。"
+        role="status"
+      />
+
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top" :disabled="authStore.isBlacklisted">
         <el-row :gutter="16">
           <el-col :xs="24" :md="12">
             <el-form-item label="岗位名称" prop="title" for="title">
@@ -72,12 +82,25 @@
           />
         </el-form-item>
 
-        <el-form-item label="残疾适配类型" prop="disabilitySupportType" for="disabilitySupportType">
-          <el-input
+        <el-form-item label="适合招收的残疾类型" prop="disabilitySupportTypeList" for="disabilitySupportType">
+          <el-select
             id="disabilitySupportType"
-            v-model="form.disabilitySupportType"
-            placeholder="如：听力障碍、肢体障碍（可多项）"
-          />
+            v-model="form.disabilitySupportTypeList"
+            multiple
+            filterable
+            placeholder="请选择本岗位适合的残疾类型（可多选）"
+            class="job-disability-select"
+          >
+            <el-option
+              v-for="opt in DISABILITY_TYPE_OPTIONS"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            />
+          </el-select>
+          <p class="job-disability-hint" role="note">
+            可多选；保存后以逗号拼接写入岗位要求，供求职者筛选与推荐匹配。
+          </p>
         </el-form-item>
 
         <el-form-item label="福利待遇" prop="welfare" for="welfare">
@@ -89,7 +112,9 @@
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" :loading="saving" @click="handleSubmit">发布岗位</el-button>
+          <el-button type="primary" :loading="saving" :disabled="authStore.isBlacklisted" @click="handleSubmit">
+            发布岗位
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -97,14 +122,23 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { createJob } from '../../api/jobs'
+import { DISABILITY_TYPE_OPTIONS, serializeDisabilityTypesForStorage } from '../../constants/disability'
+import { useAuthStore } from '../../stores/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const formRef = ref()
 const saving = ref(false)
+
+onMounted(() => {
+  if (authStore.token) {
+    authStore.fetchCurrentUser().catch(() => {})
+  }
+})
 
 const form = reactive({
   title: '',
@@ -116,7 +150,7 @@ const form = reactive({
   experienceRequirement: '',
   workMode: 'OFFLINE',
   skillRequirements: '',
-  disabilitySupportType: '',
+  disabilitySupportTypeList: [],
   welfare: '',
   jobDescription: ''
 })
@@ -134,6 +168,10 @@ function goManage() {
 }
 
 async function handleSubmit() {
+  if (authStore.isBlacklisted) {
+    ElMessage.warning('您的企业账号已被列入黑名单，无法新建岗位')
+    return
+  }
   const valid = await formRef.value?.validate().catch(() => false)
   if (!valid) {
     return
@@ -155,7 +193,7 @@ async function handleSubmit() {
       experienceRequirement: form.experienceRequirement,
       workMode: form.workMode,
       skillRequirements: form.skillRequirements,
-      disabilitySupportType: form.disabilitySupportType,
+      disabilitySupportType: serializeDisabilityTypesForStorage(form.disabilitySupportTypeList),
       welfare: form.welfare,
       jobDescription: form.jobDescription
     }
@@ -167,3 +205,20 @@ async function handleSubmit() {
   }
 }
 </script>
+
+<style scoped>
+.blacklist-page-alert {
+  margin-bottom: 16px;
+}
+
+.job-disability-select {
+  width: 100%;
+}
+
+.job-disability-hint {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--el-text-color-secondary);
+}
+</style>

@@ -33,6 +33,7 @@ public interface JobMapper {
                    j.created_at, j.updated_at, ep.enterprise_name
             FROM job j
             LEFT JOIN enterprise_profile ep ON ep.user_id = j.enterprise_user_id
+            INNER JOIN sys_user eu ON eu.id = j.enterprise_user_id AND COALESCE(eu.blacklisted, 0) = 0
             WHERE j.id = #{id} AND j.status = 'OPEN'
             """)
     Job selectPublishedById(Long id);
@@ -121,6 +122,76 @@ public interface JobMapper {
                         @Param("workMode") String workMode,
                         @Param("disabilitySupportType") String disabilitySupportType);
 
+    /**
+     * 求职者岗位浏览：与 countPublishedForSeekerBrowse 条件一致；结果在内存中按与个人资料残疾类型的匹配度排序后再分页。
+     */
+    @Select("""
+            <script>
+            SELECT j.id, j.enterprise_user_id, j.title, j.category, j.city, j.district, j.salary, j.work_mode,
+                   j.education_requirement, j.experience_requirement, j.skill_requirements,
+                   j.disability_support_type, j.accessibility_support_desc, j.job_description,
+                   j.headcount, j.status, j.publish_time, j.expire_time, j.reviewed_by, j.reviewed_at,
+                   j.created_at, j.updated_at, ep.enterprise_name
+            FROM job j
+            LEFT JOIN enterprise_profile ep ON ep.user_id = j.enterprise_user_id
+            INNER JOIN sys_user eu ON eu.id = j.enterprise_user_id AND COALESCE(eu.blacklisted, 0) = 0
+            WHERE j.status = 'OPEN'
+              <if test="keyword != null and keyword != ''">
+                AND (j.title LIKE CONCAT('%', #{keyword}, '%')
+                     OR j.category LIKE CONCAT('%', #{keyword}, '%')
+                     OR j.skill_requirements LIKE CONCAT('%', #{keyword}, '%'))
+              </if>
+              <if test="city != null and city != ''">
+                AND j.city = #{city}
+              </if>
+              <if test="workMode != null and workMode != ''">
+                AND j.work_mode = #{workMode}
+              </if>
+              <if test="disabilityTokens != null and disabilityTokens.size() > 0">
+                AND (
+                <foreach collection="disabilityTokens" item="dt" separator=" OR ">
+                  j.disability_support_type LIKE CONCAT('%', #{dt}, '%')
+                </foreach>
+                )
+              </if>
+            </script>
+            """)
+    List<Job> selectPublishedForSeekerBrowse(@Param("keyword") String keyword,
+                                              @Param("city") String city,
+                                              @Param("workMode") String workMode,
+                                              @Param("disabilityTokens") List<String> disabilityTokens);
+
+    @Select("""
+            <script>
+            SELECT COUNT(1)
+            FROM job j
+            INNER JOIN sys_user eu ON eu.id = j.enterprise_user_id AND COALESCE(eu.blacklisted, 0) = 0
+            WHERE j.status = 'OPEN'
+              <if test="keyword != null and keyword != ''">
+                AND (j.title LIKE CONCAT('%', #{keyword}, '%')
+                     OR j.category LIKE CONCAT('%', #{keyword}, '%')
+                     OR j.skill_requirements LIKE CONCAT('%', #{keyword}, '%'))
+              </if>
+              <if test="city != null and city != ''">
+                AND j.city = #{city}
+              </if>
+              <if test="workMode != null and workMode != ''">
+                AND j.work_mode = #{workMode}
+              </if>
+              <if test="disabilityTokens != null and disabilityTokens.size() > 0">
+                AND (
+                <foreach collection="disabilityTokens" item="dt" separator=" OR ">
+                  j.disability_support_type LIKE CONCAT('%', #{dt}, '%')
+                </foreach>
+                )
+              </if>
+            </script>
+            """)
+    Long countPublishedForSeekerBrowse(@Param("keyword") String keyword,
+                                        @Param("city") String city,
+                                        @Param("workMode") String workMode,
+                                        @Param("disabilityTokens") List<String> disabilityTokens);
+
     @Select("""
             SELECT j.id, j.enterprise_user_id, j.title, j.category, j.city, j.district, j.salary, j.work_mode,
                    j.education_requirement, j.experience_requirement, j.skill_requirements,
@@ -129,6 +200,7 @@ public interface JobMapper {
                    j.created_at, j.updated_at, ep.enterprise_name
             FROM job j
             LEFT JOIN enterprise_profile ep ON ep.user_id = j.enterprise_user_id
+            INNER JOIN sys_user eu ON eu.id = j.enterprise_user_id AND COALESCE(eu.blacklisted, 0) = 0
             WHERE j.status = 'OPEN'
             ORDER BY j.publish_time DESC, j.id DESC
             """)

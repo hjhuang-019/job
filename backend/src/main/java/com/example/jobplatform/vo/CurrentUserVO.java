@@ -9,6 +9,7 @@ public class CurrentUserVO {
     private String username;
     private String role;
     private Integer status;
+    private Boolean blacklisted;
     private String realName;
     private String phone;
     private String email;
@@ -45,6 +46,14 @@ public class CurrentUserVO {
 
     public void setStatus(Integer status) {
         this.status = status;
+    }
+
+    public Boolean getBlacklisted() {
+        return blacklisted;
+    }
+
+    public void setBlacklisted(Boolean blacklisted) {
+        this.blacklisted = blacklisted;
     }
 
     public String getRealName() {

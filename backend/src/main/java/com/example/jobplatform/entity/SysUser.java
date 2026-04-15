@@ -9,6 +9,10 @@ public class SysUser {
     private String password;
     private String role;
     private Integer status;
+    private Integer blacklisted;
+    private LocalDateTime blacklistedAt;
+    private Long blacklistedBy;
+    private String blacklistReason;
     private String realName;
     private String phone;
     private String email;
@@ -54,6 +58,38 @@ public class SysUser {
 
     public void setStatus(Integer status) {
         this.status = status;
+    }
+
+    public Integer getBlacklisted() {
+        return blacklisted;
+    }
+
+    public void setBlacklisted(Integer blacklisted) {
+        this.blacklisted = blacklisted;
+    }
+
+    public LocalDateTime getBlacklistedAt() {
+        return blacklistedAt;
+    }
+
+    public void setBlacklistedAt(LocalDateTime blacklistedAt) {
+        this.blacklistedAt = blacklistedAt;
+    }
+
+    public Long getBlacklistedBy() {
+        return blacklistedBy;
+    }
+
+    public void setBlacklistedBy(Long blacklistedBy) {
+        this.blacklistedBy = blacklistedBy;
+    }
+
+    public String getBlacklistReason() {
+        return blacklistReason;
+    }
+
+    public void setBlacklistReason(String blacklistReason) {
+        this.blacklistReason = blacklistReason;
     }
 
     public String getRealName() {

@@ -3,6 +3,7 @@ USE job_platform;
 SET NAMES utf8mb4;
 
 DELETE FROM favorite_job;
+DELETE FROM sys_user_feedback;
 DELETE FROM sys_audit_log;
 DELETE FROM sys_announcement;
 DELETE FROM sys_message;
@@ -43,7 +44,7 @@ VALUES (
 
 INSERT INTO resume (
   id, user_id, resume_name, resume_type, file_path, content_text, education_experience,
-  work_experience, project_experience, skill_summary, is_default, status
+  work_experience, project_experience, skill_summary, disability_type, disability_level, is_default, status
 )
 VALUES
   (
@@ -53,6 +54,7 @@ VALUES
     '2021-2023 某信息技术公司 Java开发工程师',
     '参与就业服务平台、后台管理系统和数据报表系统开发。',
     'Java、Spring Boot、MyBatis、MySQL、Redis、Vue3',
+    NULL, NULL,
     1, 1
   ),
   (
@@ -62,6 +64,7 @@ VALUES
     '2023-至今 某互联网公司 全栈开发工程师',
     '主导招聘平台前后端联调，负责登录、岗位、投递、消息等模块。',
     'Vue3、Element Plus、Pinia、Spring Boot、MySQL',
+    NULL, NULL,
     0, 1
   ),
   (
@@ -71,6 +74,7 @@ VALUES
     '2020-2021 某科技公司 测试实习生',
     '参与中后台系统测试用例设计、缺陷跟踪和回归测试。',
     'Postman、SQL、基础自动化测试',
+    NULL, NULL,
     0, 1
   );
 

@@ -18,7 +18,17 @@
             @row-click="selectResume"
             style="width: 100%"
           >
-            <el-table-column prop="title" label="标题" min-width="180" />
+            <el-table-column prop="title" label="标题" min-width="160" />
+            <el-table-column label="残疾类型" min-width="200">
+              <template #default="{ row }">
+                <DisabilityTypeTags :value="row.disabilityType || ''" />
+              </template>
+            </el-table-column>
+            <el-table-column label="残疾等级" width="100" align="center">
+              <template #default="{ row }">
+                <DisabilityLevelTag :value="row.disabilityLevel || ''" />
+              </template>
+            </el-table-column>
             <el-table-column label="默认简历" width="100">
               <template #default="{ row }">
                 <el-tag v-if="row.isDefault" type="success">默认</el-tag>
@@ -46,6 +56,14 @@
 
           <template v-if="selectedResume">
             <p><strong>标题：</strong>{{ selectedResume.title }}</p>
+            <p class="preview-tags-row">
+              <strong>残疾类型：</strong>
+              <DisabilityTypeTags :value="selectedResume.disabilityType || ''" />
+            </p>
+            <p class="preview-tags-row">
+              <strong>残疾等级：</strong>
+              <DisabilityLevelTag :value="selectedResume.disabilityLevel || ''" />
+            </p>
             <p><strong>教育经历：</strong>{{ selectedResume.education || '暂无' }}</p>
             <p><strong>工作经历：</strong>{{ selectedResume.experience || '暂无' }}</p>
             <p><strong>项目经历：</strong>{{ selectedResume.projectExperience || '暂无' }}</p>
@@ -61,10 +79,13 @@
 
 <script setup>
 import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { deleteResume, getResumeList, updateResume } from '../../api/resume'
+import DisabilityLevelTag from '../../components/DisabilityLevelTag.vue'
+import DisabilityTypeTags from '../../components/DisabilityTypeTags.vue'
 
+const route = useRoute()
 const router = useRouter()
 const loading = ref(false)
 const resumeList = ref([])
@@ -87,7 +108,14 @@ async function loadResumes() {
   try {
     const response = await getResumeList()
     resumeList.value = response.data || []
-    selectedResume.value = resumeList.value[0] || null
+    const rid = route.query._rid
+    if (rid != null && String(rid).trim() !== '') {
+      const match = resumeList.value.find((r) => String(r.id) === String(rid))
+      selectedResume.value = match || resumeList.value[0] || null
+      router.replace({ name: 'resumeList', query: {} })
+    } else {
+      selectedResume.value = resumeList.value[0] || null
+    }
   } catch (error) {
     ElMessage.error('加载简历列表失败，请稍后重试')
   } finally {
@@ -98,6 +126,8 @@ async function loadResumes() {
 async function handleSetDefault(row) {
   await updateResume(row.id, {
     title: row.title,
+    disabilityType: row.disabilityType || '',
+    disabilityLevel: row.disabilityLevel || '',
     education: row.education,
     experience: row.experience,
     projectExperience: row.projectExperience,
@@ -122,3 +152,12 @@ onMounted(() => {
   loadResumes()
 })
 </script>
+
+<style scoped>
+.preview-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+</style>

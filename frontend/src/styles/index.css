@@ -1,4 +1,8 @@
 :root {
+  /* 由无障碍设置写入，与 html zoom 同步，供少量 calc() 使用 */
+  --jp-ui-scale: 1;
+  /* 主内容区最大宽度（与 .container 一致，各页内层可引用） */
+  --jp-content-max: 1400px;
   --font-size-base: 16px;
   --line-height-base: 1.5;
   --text-color: #1f2937;
@@ -21,10 +25,7 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-html[data-font-size="large"] {
-  --font-size-base: 18px;
-  --line-height-base: 1.65;
-}
+/* 页面与字体比例由脚本对 <html> 设置 zoom（80%–200%），此处不再使用 data-font-size */
 
 html[data-theme="contrast"] {
   --text-color: #ffffff;
@@ -67,7 +68,7 @@ select {
 }
 
 .container {
-  width: min(1200px, calc(100% - 32px));
+  width: min(var(--jp-content-max), calc(100% - 32px));
   margin: 0 auto;
 }
 
@@ -76,16 +77,25 @@ select {
 }
 
 .app-header {
-  background: var(--header-bg);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 55%, #0f766e 100%);
   color: var(--header-text);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.16);
 }
 
 .header-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 20px 0;
+  gap: 18px;
+  padding: 18px 0;
+  flex-wrap: wrap;
+}
+
+.header-brand {
+  min-width: 220px;
 }
 
 .site-title {
@@ -102,16 +112,51 @@ select {
 .nav-link {
   display: inline-block;
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: 999px;
   color: var(--header-text);
+  transition: background 0.2s ease, transform 0.2s ease;
 }
 
 .nav-link:hover {
   background: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
+}
+
+.main-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.nav-user-trigger {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font: inherit;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  min-width: 110px;
+}
+
+.nav-user-trigger:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.nav-user-trigger span {
+  font-size: 12px;
+  opacity: 0.86;
+}
+
+.nav-user-trigger strong {
+  font-size: 15px;
 }
 
 .app-main {
-  padding: 24px 0 40px;
+  padding: 28px 0 44px;
 }
 
 .skip-link {
@@ -173,10 +218,62 @@ select {
   flex-wrap: wrap;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
 .accessibility-tools label {
   font-weight: 600;
 }
 
 .table-pagination {
   margin-top: 16px;
+}
+
+/* 重复投递：白底居中弹窗（非 ElMessage 顶部红/黑条） */
+.jp-duplicate-apply-msgbox.el-message-box {
+  background-color: #ffffff !important;
+  border: 1px solid #e4e7ed;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+}
+
+.jp-duplicate-apply-msgbox .el-message-box__title {
+  font-weight: 600;
+  color: #303133;
+}
+
+.jp-duplicate-apply-msgbox .el-message-box__message {
+  color: #606266;
+  font-size: 1rem;
+}
+
+html[data-theme="contrast"] .jp-duplicate-apply-msgbox.el-message-box {
+  background-color: #111111 !important;
+  border-color: #ffffff;
+}
+
+html[data-theme="contrast"] .jp-duplicate-apply-msgbox .el-message-box__title,
+html[data-theme="contrast"] .jp-duplicate-apply-msgbox .el-message-box__message {
+  color: #ffffff;
+}
+
+@media (max-width: 960px) {
+  .header-content {
+    align-items: flex-start;
+  }
+
+  .accessibility-tools {
+    margin-left: 0;
+  }
+
+  .header-actions {
+    margin-left: 0;
+    width: 100%;
+  }
 }

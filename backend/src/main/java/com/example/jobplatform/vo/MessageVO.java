@@ -10,6 +10,8 @@ public class MessageVO {
     private String content;
     private String relatedBusinessType;
     private Long relatedBusinessId;
+    /** 新简历投递（APPLY_RECEIVED）时，对应岗位 ID，便于前端跳转投递记录页 */
+    private Long relatedJobId;
     private Boolean read;
     private LocalDateTime readTime;
     private LocalDateTime createdAt;
@@ -60,6 +62,14 @@ public class MessageVO {
 
     public void setRelatedBusinessId(Long relatedBusinessId) {
         this.relatedBusinessId = relatedBusinessId;
+    }
+
+    public Long getRelatedJobId() {
+        return relatedJobId;
+    }
+
+    public void setRelatedJobId(Long relatedJobId) {
+        this.relatedJobId = relatedJobId;
     }
 
     public Boolean getRead() {

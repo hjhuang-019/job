@@ -3,6 +3,7 @@ package com.example.jobplatform.service.impl;
 import com.example.jobplatform.common.BusinessException;
 import com.example.jobplatform.entity.SysMessage;
 import com.example.jobplatform.entity.SysUser;
+import com.example.jobplatform.mapper.JobApplicationMapper;
 import com.example.jobplatform.mapper.SysMessageMapper;
 import com.example.jobplatform.mapper.SysUserMapper;
 import com.example.jobplatform.security.UserContext;
@@ -20,10 +21,14 @@ public class MessageServiceImpl implements MessageService {
 
     private final SysMessageMapper sysMessageMapper;
     private final SysUserMapper sysUserMapper;
+    private final JobApplicationMapper jobApplicationMapper;
 
-    public MessageServiceImpl(SysMessageMapper sysMessageMapper, SysUserMapper sysUserMapper) {
+    public MessageServiceImpl(SysMessageMapper sysMessageMapper,
+                              SysUserMapper sysUserMapper,
+                              JobApplicationMapper jobApplicationMapper) {
         this.sysMessageMapper = sysMessageMapper;
         this.sysUserMapper = sysUserMapper;
+        this.jobApplicationMapper = jobApplicationMapper;
     }
 
     @Override
@@ -100,6 +105,12 @@ public class MessageServiceImpl implements MessageService {
         vo.setContent(message.getContent());
         vo.setRelatedBusinessType(message.getRelatedBusinessType());
         vo.setRelatedBusinessId(message.getRelatedBusinessId());
+        if ("APPLY_RECEIVED".equals(message.getMessageType())
+                && "JOB_APPLICATION".equals(message.getRelatedBusinessType())
+                && message.getRelatedBusinessId() != null) {
+            Long jobId = jobApplicationMapper.selectJobIdByApplicationId(message.getRelatedBusinessId());
+            vo.setRelatedJobId(jobId);
+        }
         vo.setRead(message.getIsRead() != null && message.getIsRead() == 1);
         vo.setReadTime(message.getReadTime());
         vo.setCreatedAt(message.getCreatedAt());

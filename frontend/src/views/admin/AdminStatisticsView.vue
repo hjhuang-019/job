@@ -1,9 +1,9 @@
 <template>
   <section class="admin-statistics-page" aria-label="管理员统计页面">
-    <el-card shadow="never" class="hero-card">
+    <el-card shadow="never" class="hero-card stats-hero-card">
       <template #header>
         <div class="section-header">
-          <h2>平台基础统计</h2>
+          <h2>平台基础数据统计</h2>
           <el-button :loading="loading" @click="loadStatistics">刷新统计</el-button>
         </div>
       </template>
@@ -35,12 +35,15 @@
         </el-col>
       </el-row>
     </el-card>
+
+    <AdminUserArchivePanel />
   </section>
 </template>
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { getAdminStatistics } from '../../api/admin'
+import AdminUserArchivePanel from './AdminUserArchivePanel.vue'
 
 const loading = ref(false)
 const statistics = reactive({
@@ -67,3 +70,28 @@ onMounted(() => {
   loadStatistics()
 })
 </script>
+
+<style scoped>
+.admin-statistics-page {
+  width: 100%;
+  max-width: min(var(--jp-content-max), 100%);
+  margin: 0 auto;
+}
+
+.hero-card {
+  border-radius: 12px;
+}
+
+.stats-hero-card :deep(.section-header) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.stats-hero-card h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+</style>

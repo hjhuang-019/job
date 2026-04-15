@@ -14,6 +14,8 @@ public class Resume {
     private String workExperience;
     private String projectExperience;
     private String skillSummary;
+    private String disabilityType;
+    private String disabilityLevel;
     private Integer isDefault;
     private Integer status;
     private LocalDateTime createdAt;
@@ -97,6 +99,22 @@ public class Resume {
 
     public void setSkillSummary(String skillSummary) {
         this.skillSummary = skillSummary;
+    }
+
+    public String getDisabilityType() {
+        return disabilityType;
+    }
+
+    public void setDisabilityType(String disabilityType) {
+        this.disabilityType = disabilityType;
+    }
+
+    public String getDisabilityLevel() {
+        return disabilityLevel;
+    }
+
+    public void setDisabilityLevel(String disabilityLevel) {
+        this.disabilityLevel = disabilityLevel;
     }
 
     public Integer getIsDefault() {

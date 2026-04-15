@@ -17,6 +17,7 @@ public interface ResumeMapper {
     @Select("""
             SELECT id, user_id, resume_name, resume_type, file_path, content_text,
                    education_experience, work_experience, project_experience, skill_summary,
+                   disability_type, disability_level,
                    is_default, status, created_at, updated_at
             FROM resume
             WHERE id = #{id} AND status = 1
@@ -26,6 +27,7 @@ public interface ResumeMapper {
     @Select("""
             SELECT id, user_id, resume_name, resume_type, file_path, content_text,
                    education_experience, work_experience, project_experience, skill_summary,
+                   disability_type, disability_level,
                    is_default, status, created_at, updated_at
             FROM resume
             WHERE user_id = #{userId} AND status = 1
@@ -36,6 +38,7 @@ public interface ResumeMapper {
     @Select("""
             SELECT id, user_id, resume_name, resume_type, file_path, content_text,
                    education_experience, work_experience, project_experience, skill_summary,
+                   disability_type, disability_level,
                    is_default, status, created_at, updated_at
             FROM resume
             WHERE status = 1
@@ -47,10 +50,12 @@ public interface ResumeMapper {
             INSERT INTO resume (
                 user_id, resume_name, resume_type, file_path, content_text,
                 education_experience, work_experience, project_experience, skill_summary,
+                disability_type, disability_level,
                 is_default, status
             ) VALUES (
                 #{userId}, #{resumeName}, #{resumeType}, #{filePath}, #{contentText},
                 #{educationExperience}, #{workExperience}, #{projectExperience}, #{skillSummary},
+                #{disabilityType}, #{disabilityLevel},
                 #{isDefault}, #{status}
             )
             """)
@@ -69,6 +74,8 @@ public interface ResumeMapper {
                 <if test="workExperience != null">work_experience = #{workExperience},</if>
                 <if test="projectExperience != null">project_experience = #{projectExperience},</if>
                 <if test="skillSummary != null">skill_summary = #{skillSummary},</if>
+                disability_type = #{disabilityType,jdbcType=VARCHAR},
+                disability_level = #{disabilityLevel,jdbcType=VARCHAR},
                 <if test="isDefault != null">is_default = #{isDefault},</if>
                 <if test="status != null">status = #{status},</if>
             </set>
@@ -92,6 +99,7 @@ public interface ResumeMapper {
     @Select("""
             SELECT id, user_id, resume_name, resume_type, file_path, content_text,
                    education_experience, work_experience, project_experience, skill_summary,
+                   disability_type, disability_level,
                    is_default, status, created_at, updated_at
             FROM resume
             WHERE id = #{id} AND user_id = #{userId} AND status = 1
@@ -101,6 +109,7 @@ public interface ResumeMapper {
     @Select("""
             SELECT id, user_id, resume_name, resume_type, file_path, content_text,
                    education_experience, work_experience, project_experience, skill_summary,
+                   disability_type, disability_level,
                    is_default, status, created_at, updated_at
             FROM resume
             WHERE user_id = #{userId} AND status = 1
