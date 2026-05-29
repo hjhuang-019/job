@@ -31,8 +31,9 @@
             {{ formatDateTime(row.applyTime) || '—' }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
+            <el-button type="primary" link @click="viewResumeDetail(row)">查看简历</el-button>
             <el-button type="primary" link @click="openStatusDialog(row)">更新状态</el-button>
           </template>
         </el-table-column>
@@ -96,6 +97,67 @@
         <el-button type="primary" :loading="saving" @click="handleUpdateStatus">保存</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="resumeDialogVisible" title="简历详情" width="800px" destroy-on-close>
+      <div v-loading="resumeLoading">
+        <template v-if="currentResume">
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="简历标题">{{ currentResume.title || '—' }}</el-descriptions-item>
+            <el-descriptions-item label="残疾类型">
+              <DisabilityTypeTags :value="currentResume.disabilityType || ''" />
+            </el-descriptions-item>
+            <el-descriptions-item label="残疾等级">
+              <DisabilityLevelTag :value="currentResume.disabilityLevel || ''" />
+            </el-descriptions-item>
+            <el-descriptions-item label="创建时间">{{ formatDateTime(currentResume.createdAt) || '—' }}</el-descriptions-item>
+            <el-descriptions-item label="更新时间">{{ formatDateTime(currentResume.updatedAt) || '—' }}</el-descriptions-item>
+            <el-descriptions-item label="是否默认简历">
+              <el-tag v-if="currentResume.isDefault" type="success">是</el-tag>
+              <span v-else>否</span>
+            </el-descriptions-item>
+          </el-descriptions>
+
+          <el-card shadow="never" class="detail-section" style="margin-top: 16px">
+            <h3>教育经历</h3>
+            <div class="content-area">
+              <pre>{{ currentResume.education || '暂无' }}</pre>
+            </div>
+          </el-card>
+
+          <el-card shadow="never" class="detail-section" style="margin-top: 16px">
+            <h3>工作经历</h3>
+            <div class="content-area">
+              <pre>{{ currentResume.experience || '暂无' }}</pre>
+            </div>
+          </el-card>
+
+          <el-card shadow="never" class="detail-section" style="margin-top: 16px">
+            <h3>项目经历</h3>
+            <div class="content-area">
+              <pre>{{ currentResume.projectExperience || '暂无' }}</pre>
+            </div>
+          </el-card>
+
+          <el-card shadow="never" class="detail-section" style="margin-top: 16px">
+            <h3>技能总结</h3>
+            <div class="content-area">
+              <pre>{{ currentResume.skills || '暂无' }}</pre>
+            </div>
+          </el-card>
+
+          <el-card shadow="never" class="detail-section" style="margin-top: 16px">
+            <h3>自我评价</h3>
+            <div class="content-area">
+              <pre>{{ currentResume.selfEvaluation || '暂无' }}</pre>
+            </div>
+          </el-card>
+        </template>
+        <el-empty v-else description="简历信息加载失败" />
+      </div>
+      <template #footer>
+        <el-button @click="resumeDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </section>
 </template>
 
@@ -104,8 +166,11 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getJobApplications, updateApplicationStatus } from '../../api/applications'
+import { getResumeDetail } from '../../api/resume'
 import { formatDateTime } from '../../utils/datetime'
 import { enterpriseStatusLabel } from '../../utils/applicationStatus'
+import DisabilityLevelTag from '../../components/DisabilityLevelTag.vue'
+import DisabilityTypeTags from '../../components/DisabilityTypeTags.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -114,6 +179,9 @@ const saving = ref(false)
 const applications = ref([])
 const dialogVisible = ref(false)
 const selectedApplicationId = ref()
+const resumeDialogVisible = ref(false)
+const resumeLoading = ref(false)
+const currentResume = ref(null)
 
 const jobId = computed(() => Number(route.params.jobId))
 
@@ -189,6 +257,27 @@ async function handleUpdateStatus() {
   }
 }
 
+async function viewResumeDetail(row) {
+  if (!row.resumeId) {
+    ElMessage.warning('该投递没有关联简历')
+    return
+  }
+  
+  resumeLoading.value = true
+  resumeDialogVisible.value = true
+  currentResume.value = null
+  
+  try {
+    const response = await getResumeDetail(row.resumeId)
+    currentResume.value = response.data
+  } catch (error) {
+    console.error('获取简历详情失败:', error)
+    ElMessage.error('获取简历详情失败，请稍后重试')
+  } finally {
+    resumeLoading.value = false
+  }
+}
+
 onMounted(() => {
   loadApplications()
 })
@@ -211,5 +300,39 @@ onMounted(() => {
 }
 .application-expand .k::after {
   content: '：';
+}
+
+.detail-section {
+  margin-bottom: 16px;
+}
+
+.detail-section h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.content-area {
+  padding: 12px;
+  background-color: var(--el-fill-color-light);
+  border-radius: 4px;
+  border: 1px solid var(--el-border-color-light);
+}
+
+.content-area pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--el-text-color-regular);
+}
+
+.preview-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 </style>

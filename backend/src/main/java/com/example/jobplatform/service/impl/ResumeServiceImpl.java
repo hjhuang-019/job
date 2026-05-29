@@ -2,8 +2,11 @@ package com.example.jobplatform.service.impl;
 
 import com.example.jobplatform.common.BusinessException;
 import com.example.jobplatform.dto.ResumeSaveRequest;
+import com.example.jobplatform.entity.JobApplication;
 import com.example.jobplatform.entity.Resume;
 import com.example.jobplatform.entity.SysUser;
+import com.example.jobplatform.mapper.JobApplicationMapper;
+import com.example.jobplatform.mapper.JobMapper;
 import com.example.jobplatform.mapper.ResumeMapper;
 import com.example.jobplatform.mapper.SysUserMapper;
 import com.example.jobplatform.security.UserContext;
@@ -20,13 +23,19 @@ import java.util.stream.Collectors;
 public class ResumeServiceImpl implements ResumeService {
 
     private static final String ROLE_JOB_SEEKER = "JOB_SEEKER";
+    private static final String ROLE_ENTERPRISE = "ENTERPRISE";
 
     private final ResumeMapper resumeMapper;
     private final SysUserMapper sysUserMapper;
+    private final JobApplicationMapper jobApplicationMapper;
+    private final JobMapper jobMapper;
 
-    public ResumeServiceImpl(ResumeMapper resumeMapper, SysUserMapper sysUserMapper) {
+    public ResumeServiceImpl(ResumeMapper resumeMapper, SysUserMapper sysUserMapper,
+                            JobApplicationMapper jobApplicationMapper, JobMapper jobMapper) {
         this.resumeMapper = resumeMapper;
         this.sysUserMapper = sysUserMapper;
+        this.jobApplicationMapper = jobApplicationMapper;
+        this.jobMapper = jobMapper;
     }
 
     @Override
@@ -59,8 +68,38 @@ public class ResumeServiceImpl implements ResumeService {
 
     @Override
     public ResumeVO getResume(Long id) {
-        Long userId = getCurrentJobSeekerUserId();
-        Resume resume = getOwnResume(userId, id);
+        Long userId = UserContext.getUserId();
+        if (userId == null) {
+            throw new BusinessException(401, "未登录");
+        }
+        
+        SysUser user = sysUserMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(404, "用户不存在");
+        }
+        
+        String role = user.getRole();
+        Resume resume;
+        
+        if (ROLE_JOB_SEEKER.equals(role)) {
+            // 求职者只能查看自己的简历
+            resume = getOwnResume(userId, id);
+        } else if (ROLE_ENTERPRISE.equals(role)) {
+            // 企业用户只能查看投递到他们岗位的简历
+            resume = resumeMapper.selectById(id);
+            if (resume == null) {
+                throw new BusinessException(404, "简历不存在");
+            }
+            
+            // 验证该简历是否投递到了该企业的岗位
+            boolean hasPermission = jobApplicationMapper.existsByResumeIdAndEnterpriseUserId(id, userId);
+            if (!hasPermission) {
+                throw new BusinessException(403, "无权限查看该简历");
+            }
+        } else {
+            throw new BusinessException(403, "当前角色无权限操作");
+        }
+        
         return toVO(resume);
     }
 

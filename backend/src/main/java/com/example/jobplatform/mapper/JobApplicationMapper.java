@@ -126,4 +126,12 @@ public interface JobApplicationMapper {
             ORDER BY apply_time DESC, id DESC
             """)
     List<JobApplication> selectAllByJobIdAndJobSeekerUserId(@Param("jobId") Long jobId, @Param("jobSeekerUserId") Long jobSeekerUserId);
+
+    @Select("""
+            SELECT COUNT(1) > 0
+            FROM job_application a
+            JOIN job j ON j.id = a.job_id
+            WHERE a.resume_id = #{resumeId} AND j.enterprise_user_id = #{enterpriseUserId}
+            """)
+    boolean existsByResumeIdAndEnterpriseUserId(@Param("resumeId") Long resumeId, @Param("enterpriseUserId") Long enterpriseUserId);
 }
